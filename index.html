@@ -1,0 +1,882 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<title>Taiji Tray</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Taiji Tray">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#cdcfc1">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png"><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<style>
+@font-face{font-family:"Shippori Mincho";src:url(fonts/mincho-600.woff2) format("woff2");font-weight:600;font-display:swap}
+@font-face{font-family:"Shippori Mincho";src:url(fonts/mincho-800.woff2) format("woff2");font-weight:800;font-display:swap}
+@font-face{font-family:"Zen Kaku Gothic New";src:url(fonts/gothic-400.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Zen Kaku Gothic New";src:url(fonts/gothic-500.woff2) format("woff2");font-weight:500;font-display:swap}
+@font-face{font-family:"Zen Kaku Gothic New";src:url(fonts/gothic-700.woff2) format("woff2");font-weight:700;font-display:swap}
+</style>
+<style>
+/* Layout: one stoneware tray, read top to bottom: the spinning stone, its brass plate, then bowls of colored stones that weigh it. */
+:root{
+  color-scheme: light;
+  --clay:#cdcfc1;
+  --clay-deep:#aeb1a1;
+  --ink:#1b1c1e;
+  --bone:#f0eadb;
+  --brass:#b08636;
+  --brass-hi:#e7c77b;
+  --wood:#6e4428;
+  --wood-hi:#a0683d;
+  --text:#2a2b26;
+  --muted:#5d6055;
+  --display:"Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", Georgia, serif;
+  --body:"Zen Kaku Gothic New", "Hiragino Sans", "Segoe UI", system-ui, sans-serif;
+}
+html,body{min-height:100%}
+body{
+  background-color:var(--clay);
+  background-image:
+    radial-gradient(circle at 18% 22%, rgba(60,62,50,.18) 0 1px, transparent 1.6px),
+    radial-gradient(circle at 72% 64%, rgba(60,62,50,.16) 0 1.2px, transparent 1.8px),
+    radial-gradient(circle at 44% 86%, rgba(90,70,40,.16) 0 1px, transparent 1.5px),
+    radial-gradient(ellipse at 50% 30%, rgba(255,255,245,.45), transparent 60%),
+    radial-gradient(ellipse at 50% 110%, rgba(70,74,60,.35), transparent 60%);
+  background-size: 37px 41px, 53px 47px, 29px 31px, 100% 100%, 100% 100%;
+  color:var(--text);
+  font-family:var(--body);
+  overflow-x:hidden;
+}
+body::after{
+  content:""; position:fixed; inset:0; pointer-events:none; z-index:50;
+  opacity:.42; mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .3  0 0 0 0 .3  0 0 0 0 .26  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+.wrap{
+  max-width:600px; margin:0 auto;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));
+  padding-right:max(16px, env(safe-area-inset-right, 0px));
+  padding-block:20px 150px;
+  display:flex; flex-direction:column; align-items:center; gap:18px;
+}
+header{width:100%; display:flex; align-items:baseline; justify-content:space-between; gap:12px}
+h1{
+  font-family:var(--display); font-weight:800; font-size:1.7rem; margin:0; letter-spacing:.01em;
+  color:var(--text); text-shadow:0 1px 0 rgba(255,255,250,.55), 0 -1px 0 rgba(0,0,0,.12);
+}
+h1 small{font-family:var(--body); font-weight:500; font-size:.72rem; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-left:8px}
+.knob{
+  font:500 .72rem/1 var(--body); letter-spacing:.12em; text-transform:uppercase; color:var(--text);
+  border:0; border-radius:999px; padding:9px 14px; cursor:pointer;
+  background:linear-gradient(180deg,#dcdccf,#b9bbad);
+  box-shadow:0 2px 0 #8f9282, 0 3px 6px rgba(40,40,30,.25), inset 0 1px 0 rgba(255,255,255,.7);
+}
+.knob:active{transform:translateY(2px); box-shadow:0 0 0 #8f9282, 0 1px 2px rgba(40,40,30,.25), inset 0 1px 0 rgba(255,255,255,.5)}
+.knob[aria-pressed="false"]{color:var(--muted)}
+
+.stage{position:relative; width:min(86vw, 380px); aspect-ratio:1; max-width:100%}
+#disc{width:100%; height:100%; display:block; touch-action:none; cursor:grab}
+#disc.grabbing{cursor:grabbing}
+.hint{position:absolute; left:0; right:0; bottom:-2px; text-align:center; font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); pointer-events:none; transition:opacity .4s}
+
+.plate{
+  min-width:min(100%, 300px); max-width:100%; text-align:center; padding:12px 26px 14px; border-radius:6px;
+  background:linear-gradient(170deg,var(--brass-hi) 0%, var(--brass) 45%, #8a6424 100%);
+  box-shadow:0 3px 0 #6d4e1a, 0 8px 14px rgba(50,40,20,.3), inset 0 1px 0 rgba(255,245,210,.8), inset 0 -2px 4px rgba(80,55,15,.35);
+  position:relative;
+}
+.plate::before,.plate::after{content:""; position:absolute; top:50%; width:7px; height:7px; margin-top:-3.5px; border-radius:50%;
+  background:radial-gradient(circle at 35% 35%, #f3dc9c, #7a5718); box-shadow:inset 0 0 0 1px rgba(60,40,10,.4)}
+.plate::before{left:9px}.plate::after{right:9px}
+.plate .eyebrow{font-size:.66rem; letter-spacing:.2em; text-transform:uppercase; color:#4a3410; opacity:.85}
+.plate .word{
+  font-family:var(--display); font-weight:800; font-size:2rem; line-height:1.15; color:#3b2909;
+  text-shadow:0 1px 0 rgba(255,240,200,.7), 0 -1px 0 rgba(60,40,8,.45);
+  overflow-wrap:anywhere; text-wrap:balance;
+}
+.plate .word.long{font-size:1.4rem}
+.plate .sub{font-size:.78rem; color:#4a3410; font-variant-numeric:tabular-nums}
+.plate.flash{animation:flash .9s ease-out}
+@keyframes flash{0%{filter:brightness(1.35)}100%{filter:brightness(1)}}
+
+.balance{width:100%; display:flex; flex-direction:column; gap:8px; align-items:center}
+.bar{width:min(100%,360px); height:12px; border-radius:7px; display:flex; overflow:hidden;
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.35), 0 1px 0 rgba(255,255,250,.6); background:var(--clay-deep)}
+.bar span{height:100%; transition:flex-basis .5s cubic-bezier(.3,1.4,.5,1); box-shadow:inset -1px 0 0 rgba(0,0,0,.25), inset 0 2px 2px rgba(255,255,255,.25), inset 0 -2px 3px rgba(0,0,0,.25)}
+.legend{display:flex; flex-wrap:wrap; justify-content:center; gap:4px 14px; font-size:.8rem; color:var(--muted); font-variant-numeric:tabular-nums}
+.legend b{font-weight:500; color:var(--text)}
+.legend i{display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:5px; vertical-align:-1px; box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)}
+
+.bowls{width:100%; display:grid; grid-template-columns:repeat(auto-fill, minmax(min(140px, 42vw), 1fr)); gap:18px 14px}
+.side{display:flex; flex-direction:column; align-items:center; gap:10px; min-width:0; position:relative}
+.bowl{
+  width:min(32vw,128px); aspect-ratio:1; border-radius:50%; border:0; cursor:pointer; position:relative; padding:0;
+  background:
+    radial-gradient(circle at 50% 46%, #3a2414 0 42%, transparent 43%),
+    radial-gradient(circle at 50% 50%, var(--wood-hi) 0 52%, var(--wood) 64%, #3e2412 70%, transparent 71%);
+  box-shadow:0 10px 18px rgba(40,30,15,.35), 0 3px 4px rgba(40,30,15,.3);
+  transition:transform .12s;
+}
+.bowl::before{content:""; position:absolute; inset:0; border-radius:50%;
+  background:repeating-radial-gradient(circle at 50% 50%, rgba(255,220,170,.08) 0 2px, transparent 2px 5px); pointer-events:none}
+.bowl:active{transform:scale(.96) translateY(2px)}
+.bowl.new{
+  background:radial-gradient(circle at 50% 50%, transparent 0 60%, rgba(70,74,60,.0) 70%);
+  border:2px dashed var(--muted); box-shadow:inset 0 3px 8px rgba(60,62,50,.25);
+  display:grid; place-items:center; color:var(--muted); font:500 .74rem var(--body); letter-spacing:.12em; text-transform:uppercase; line-height:1.4;
+}
+.bowl.new::before{display:none}
+.bowl.new span{display:block; font:800 1.8rem/1 var(--display)}
+.bowl:focus-visible,.knob:focus-visible,.tray button:focus-visible,#disc:focus-visible,.flick:focus-visible,.swatch:focus-within,.remove:focus-visible{outline:3px solid var(--brass); outline-offset:4px}
+.pile{position:absolute; inset:24%; border-radius:50%; pointer-events:none}
+.pile i,.stone{background:radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--c) 45%, white) 0%, var(--c) 42%, color-mix(in srgb, var(--c) 55%, black) 92%);
+  box-shadow:0 2px 2px rgba(0,0,0,.45), inset 0 -2px 3px rgba(0,0,0,.35)}
+.pile i{position:absolute; width:26%; aspect-ratio:1; border-radius:50%}
+.remove{
+  position:absolute; top:-4px; right:calc(50% - min(16vw,64px) - 6px); width:28px; height:28px; border-radius:50%; border:0; cursor:pointer;
+  background:linear-gradient(180deg,#dcdccf,#b9bbad); color:var(--text); font:700 1rem/1 var(--body);
+  box-shadow:0 2px 0 #8f9282, 0 3px 5px rgba(40,40,30,.25);
+}
+.tag{width:100%; max-width:160px; display:flex; flex-direction:column; align-items:center; gap:4px}
+.tagrow{display:flex; width:100%; gap:6px; align-items:center}
+.tag input[type=text]{
+  flex:1; min-width:0; text-align:center; font:700 1rem var(--display); color:var(--text);
+  border:0; border-radius:4px; padding:7px 6px;
+  background:linear-gradient(180deg,#f4efe2,#e6dfcd);
+  box-shadow:0 2px 0 #b8b09a, 0 4px 6px rgba(40,40,30,.18), inset 0 0 0 1px rgba(120,110,85,.25);
+}
+.tag input[type=text]:focus{outline:2px solid var(--brass); outline-offset:2px}
+.swatch{position:relative; flex:none; width:30px; height:30px; border-radius:50%; cursor:pointer;
+  background:var(--c); box-shadow:0 2px 0 rgba(0,0,0,.25), inset 0 2px 3px rgba(255,255,255,.35), inset 0 -2px 3px rgba(0,0,0,.3), 0 0 0 2px #f4efe2}
+.swatch input{position:absolute; inset:0; opacity:0; width:100%; height:100%; cursor:pointer; border:0; padding:0}
+.tag .count{font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); font-variant-numeric:tabular-nums}
+
+.tray{
+  width:100%; min-height:64px; border-radius:14px; padding:12px 14px;
+  background:linear-gradient(180deg,#5a3720,#7b4d2c 30%,#6a4124);
+  box-shadow:inset 0 4px 10px rgba(0,0,0,.55), inset 0 -1px 0 rgba(255,210,160,.15), 0 1px 0 rgba(255,255,250,.55);
+  display:flex; flex-wrap:wrap; gap:6px; align-content:flex-start;
+}
+.tray .empty{color:rgba(250,230,200,.65); font-size:.82rem; margin:auto; text-align:center; line-height:1.5}
+.stone{width:30px; height:30px; border-radius:50%; border:0; cursor:pointer; padding:0; animation:drop .38s cubic-bezier(.3,1.6,.5,1) both}
+.stone:hover{filter:brightness(1.12)}
+@keyframes drop{0%{transform:translateY(-40px) scale(1.25); opacity:0}60%{opacity:1}100%{transform:none}}
+.foot{width:100%; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap}
+.foot p{margin:0; font-size:.8rem; color:var(--muted); line-height:1.5; max-width:40ch}
+.flick{
+  font:700 .95rem var(--display); color:var(--bone); border:0; cursor:pointer; border-radius:999px; padding:12px 22px;
+  background:radial-gradient(circle at 40% 30%, #4a4c50, var(--ink) 70%);
+  box-shadow:0 3px 0 #000, 0 6px 12px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.2);
+}
+.flick:active{transform:translateY(3px); box-shadow:0 0 0 #000, 0 2px 4px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.15)}
+.controls{display:flex; align-items:flex-end; gap:18px}
+.cupwrap{
+  position:fixed; z-index:40;
+  right:max(14px, env(safe-area-inset-right, 0px)); bottom:calc(12px + env(safe-area-inset-bottom, 0px));
+  display:flex; flex-direction:row; align-items:center; gap:14px;
+  padding:14px 12px 8px; border-radius:16px;
+  background:linear-gradient(180deg, rgba(222,223,208,.92), rgba(190,192,172,.94));
+  box-shadow:0 6px 16px rgba(40,40,30,.32), 0 1px 0 rgba(255,255,250,.7) inset, 0 -1px 0 rgba(90,92,76,.25) inset;
+}
+@media (min-width:700px){
+  .cupwrap{position:static; padding:0; background:none; box-shadow:none}
+  .wrap{padding-block:20px 40px !important}
+}
+.cup{
+  position:relative; width:64px; height:84px; border:0; padding:0; cursor:grab; touch-action:none;
+  border-radius:9px 9px 22px 22px / 9px 9px 16px 16px;
+  background:
+    repeating-linear-gradient(180deg, rgba(0,0,0,0) 0 9px, rgba(40,20,8,.28) 9px 10px, rgba(255,220,170,.12) 10px 11px, rgba(0,0,0,0) 11px 19px),
+    linear-gradient(90deg, #4a2b16 0%, #8c5a32 22%, #b67d4a 38%, #8a5630 62%, #4a2b16 100%);
+  box-shadow:0 8px 12px rgba(40,30,15,.35), 0 2px 0 #3a2212, inset 0 -6px 8px rgba(0,0,0,.3);
+  transform-origin:50% 90%;
+}
+.cup::before{ /* mouth */
+  content:""; position:absolute; left:3px; right:3px; top:-7px; height:16px; border-radius:50%;
+  background:radial-gradient(ellipse at 50% 60%, #1a0e06 0 55%, #6b4024 60%, #a8723f 78%, #5a341a 100%);
+  box-shadow:0 1px 0 rgba(255,220,170,.35);
+}
+.cup::after{ /* brass band */
+  content:""; position:absolute; left:-1px; right:-1px; bottom:16px; height:7px; border-radius:2px;
+  background:linear-gradient(180deg,var(--brass-hi),var(--brass) 60%,#7a5718);
+  box-shadow:0 1px 1px rgba(0,0,0,.35);
+}
+.cup.shaking{cursor:grabbing; animation:rattle .11s linear infinite alternate}
+.cup:disabled{cursor:progress}
+.cup:focus-visible{outline:3px solid var(--brass); outline-offset:6px}
+@keyframes rattle{0%{transform:rotate(calc(var(--amp,6) * -1deg)) translateY(-2px)}100%{transform:rotate(calc(var(--amp,6) * 1deg)) translateY(1px)}}
+.cupcol{display:flex; flex-direction:column; align-items:center; gap:6px}
+.cuplabel{font-size:.68rem; letter-spacing:.14em; text-transform:uppercase; color:var(--muted)}
+@media (prefers-reduced-motion: reduce){ .stone{animation:none}.plate.flash{animation:none}.bar span{transition:none}.cup.shaking{animation:none; transform:rotate(-4deg)} }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Taiji Tray <small>陰陽</small></h1>
+    <button class="knob" id="sound" aria-pressed="true">Sound on</button>
+  </header>
+
+  <div class="stage">
+    <canvas id="disc" tabindex="0" aria-label="The stone. Drag around it to spin, or press Space."></canvas>
+    <div class="hint" id="hint">Drag around the stone to spin it</div>
+  </div>
+
+  <div class="plate" id="plate" aria-live="polite">
+    <div class="eyebrow" id="eyebrow">Ask a question, then spin</div>
+    <div class="word" id="word">Rest or Act?</div>
+    <div class="sub" id="sub">The notch at the top decides</div>
+  </div>
+
+  <div class="balance">
+    <div class="bar" id="bar" aria-hidden="true"></div>
+    <div class="legend" id="legend"></div>
+  </div>
+
+  <div class="bowls" id="bowls"></div>
+
+  <div class="tray" id="tray" aria-label="Stones in the tray"></div>
+
+  <section class="presets" aria-labelledby="ptitle">
+    <div class="phead">
+      <h2 id="ptitle">Presets</h2>
+      <form class="psave" id="psave">
+        <input type="text" id="pname" maxlength="40" placeholder="Name this setup" aria-label="Preset name">
+        <button class="knob" type="submit">Save</button>
+      </form>
+    </div>
+    <div class="plist" id="plist"></div>
+  </section>
+
+  <div class="foot">
+    <p>Each stone you drop grows its color's share of the stone, so that color is more likely to land under the notch. Tap a stone in the tray to take it back. Tap a swatch to change a glaze, or the picture icon on a bowl to use your own photo. Or hold the shaker cup and let go to pour a random handful. Save a setup as a preset to load it again later.</p>
+    <div class="controls cupwrap">
+      <button class="flick" id="flick">Flick it</button>
+      <div class="cupcol">
+        <button class="cup" id="cup" aria-label="Shaker cup. Hold to shake, release to pour a random handful of stones."></button>
+        <span class="cuplabel" id="cuplabel">Hold to shake</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.photo{position:absolute; top:-4px; left:calc(50% - min(16vw,64px) - 6px); width:28px; height:28px; border-radius:50%; border:0; cursor:pointer; display:grid; place-items:center; padding:0;
+  background:linear-gradient(180deg,#dcdccf,#b9bbad); color:var(--text); box-shadow:0 2px 0 #8f9282, 0 3px 5px rgba(40,40,30,.25)}
+.photo:active{transform:translateY(2px)}
+.photo:focus-visible{outline:3px solid var(--brass); outline-offset:4px}
+.presets{width:100%; display:flex; flex-direction:column; gap:10px}
+.phead{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap}
+.phead h2{margin:0; font:800 1.2rem var(--display); color:var(--text); text-shadow:0 1px 0 rgba(255,255,250,.55)}
+.psave{display:flex; gap:8px; flex:1; justify-content:flex-end; min-width:min(100%,240px)}
+.psave input{flex:1; min-width:0; max-width:230px; font:500 .9rem var(--body); color:var(--text); border:0; border-radius:999px; padding:8px 14px;
+  background:linear-gradient(180deg,#f4efe2,#e6dfcd); box-shadow:inset 0 1px 3px rgba(60,50,30,.25), 0 1px 0 rgba(255,255,250,.6)}
+.psave input:focus{outline:2px solid var(--brass); outline-offset:2px}
+.plist{display:grid; grid-template-columns:repeat(auto-fill,minmax(min(170px,100%),1fr)); gap:12px}
+.pempty{grid-column:1/-1; font-size:.8rem; color:var(--muted); text-align:center; padding:12px; border:2px dashed rgba(93,96,85,.45); border-radius:12px; line-height:1.5}
+.preset{position:relative; min-width:0}
+.pload{width:100%; display:flex; flex-direction:column; gap:7px; text-align:left; cursor:pointer; border:0; border-radius:12px; padding:11px 12px 10px;
+  background:linear-gradient(180deg,#f4efe2,#e3dbc7); color:var(--text); font-family:var(--body);
+  box-shadow:0 3px 0 #b8b09a, 0 6px 10px rgba(40,40,30,.18), inset 0 1px 0 rgba(255,255,255,.8)}
+.pload:active{transform:translateY(2px); box-shadow:0 1px 0 #b8b09a, 0 2px 4px rgba(40,40,30,.18)}
+.pname{font:800 1rem/1.2 var(--display); padding-right:24px; overflow-wrap:anywhere}
+.pbar{display:flex; height:9px; border-radius:5px; overflow:hidden; background:var(--clay-deep); box-shadow:inset 0 1px 2px rgba(0,0,0,.3)}
+.pbar span{height:100%; box-shadow:inset -1px 0 0 rgba(0,0,0,.25)}
+.pmeta{font-size:.7rem; color:var(--muted); font-variant-numeric:tabular-nums; line-height:1.45}
+.pdel{position:absolute; top:6px; right:6px; width:28px; height:28px; border-radius:50%; border:0; cursor:pointer; background:transparent; color:var(--muted); font:700 1.05rem/1 var(--body)}
+.pdel:hover{background:rgba(0,0,0,.08); color:var(--text)}
+.pload:focus-visible,.pdel:focus-visible{outline:3px solid var(--brass); outline-offset:3px}
+</style>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const store = {
+    get(k,d){ try{ const v = localStorage.getItem('taiji2.'+k); return v===null?d:JSON.parse(v);}catch(e){return d} },
+    set(k,v){ try{ localStorage.setItem('taiji2.'+k, JSON.stringify(v)); return true; }catch(e){ return false } }
+  };
+  const PRESETS = [
+    ['Change','#b8452f'], ['Wander','#2f4f7a'], ['Grow','#6f9a7e'],
+    ['Share','#c99a2e'], ['Feel','#6d3b5c'], ['Play','#3f7f86'], ['Wait','#8a6a4f']
+  ];
+  const MAXB = 6, MAXS = 36;
+
+  // ---------- state ----------
+  let uid = 10;
+  let bowls = store.get('bowls', null) || [
+    {id:1, name:'Rest', color:'#1b1c1e'},
+    {id:2, name:'Act',  color:'#efe8d8'}
+  ];
+  bowls.forEach(b => uid = Math.max(uid, b.id+1));
+  let stones = store.get('stones', [1,2,2,1,2]);
+  stones = stones.filter(s => bowls.some(b => b.id===s));
+  let soundOn = store.get('sound', true);
+  const save = () => { store.set('bowls', bowls); store.set('stones', stones); };
+
+  // ---------- photos ----------
+  const PHOTO_ICON = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><rect x="1.5" y="3" width="13" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="5.5" cy="6.5" r="1.3" fill="currentColor"/><path d="M2.5 12l3.5-3.5 2.5 2.5 2-2 3 3" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>';
+  const imgEls = {}, srcCache = {};
+  let imgVer = 0;
+  const skinEl = document.createElement('style'); document.head.appendChild(skinEl);
+  const tc = document.createElement('canvas'), tx = tc.getContext('2d', {willReadFrequently:true});
+  function ensureImg(b){
+    if(!b.img){ delete imgEls[b.id]; delete srcCache[b.id]; return; }
+    const cur = imgEls[b.id];
+    if(cur && cur.src === b.img) return;
+    const im = new Image(); im.onload = () => { imgVer++; }; im.src = b.img; imgEls[b.id] = im;
+  }
+  function imgFor(b){ const im = imgEls[b.id]; return (b.img && im && im.complete && im.naturalWidth) ? im : null; }
+  function srcData(b, px){
+    const im = imgFor(b); if(!im) return null;
+    const c = srcCache[b.id];
+    if(c && c.px === px && c.im === im) return c.data;
+    tc.width = tc.height = px; tx.drawImage(im, 0, 0, px, px);
+    const data = tx.getImageData(0, 0, px, px).data; srcCache[b.id] = {px, im, data}; return data;
+  }
+  function buildSkins(){
+    let css = '';
+    bowls.forEach(b => {
+      if(!b.img) return;
+      const u = 'url("' + b.img + '")', k = '.skin-' + b.id;
+      css += '.pile i'+k+',.stone'+k+',.swatch'+k+',.legend i'+k+'{background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.4),rgba(255,255,255,0) 48%),'+u+' center/cover}\n';
+      css += '.bar span'+k+'{background:'+u+' center/cover}\n';
+    });
+    skinEl.textContent = css;
+  }
+  function loadPhoto(b, file){
+    if(!file.type || file.type.indexOf('image/') !== 0){ $('sub').textContent = 'That file is not an image.'; return; }
+    const url = URL.createObjectURL(file), im = new Image();
+    im.onload = () => {
+      const c = document.createElement('canvas'); c.width = c.height = 192;
+      const x = c.getContext('2d'), s = Math.min(im.naturalWidth, im.naturalHeight);
+      x.drawImage(im, (im.naturalWidth - s)/2, (im.naturalHeight - s)/2, s, s, 0, 0, 192, 192);
+      URL.revokeObjectURL(url);
+      b.img = c.toDataURL('image/jpeg', .85);
+      imgVer++; ensureImg(b); buildSkins(); sBowl(); landed = false; update();
+    };
+    im.onerror = () => { URL.revokeObjectURL(url); $('sub').textContent = "Couldn't read that image. Try a JPG or PNG."; };
+    im.src = url;
+  }
+
+  // ---------- audio ----------
+  let ac = null;
+  function audio(){
+    if(!soundOn) return null;
+    try{ if(!ac) ac = new (window.AudioContext||window.webkitAudioContext)(); if(ac.state==='suspended') ac.resume(); }catch(e){ ac=null }
+    return ac;
+  }
+  function noiseHit(freq, dur, gain, q){
+    const c = audio(); if(!c) return;
+    const len = Math.floor(c.sampleRate*dur), buf = c.createBuffer(1,len,c.sampleRate), d = buf.getChannelData(0);
+    for(let i=0;i<len;i++) d[i] = (Math.random()*2-1) * Math.pow(1-i/len, 4);
+    const src = c.createBufferSource(); src.buffer = buf;
+    const f = c.createBiquadFilter(); f.type='bandpass'; f.frequency.value=freq; f.Q.value=q||3;
+    const g = c.createGain(); g.gain.value = gain;
+    src.connect(f); f.connect(g); g.connect(c.destination); src.start();
+  }
+  function tone(freq, dur, gain, type){
+    const c = audio(); if(!c) return;
+    const o = c.createOscillator(), g = c.createGain(), t = c.currentTime;
+    o.type = type||'sine'; o.frequency.value = freq;
+    g.gain.setValueAtTime(gain, t); g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+    o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+dur);
+  }
+  const sTick = v => noiseHit(3200, .025, .25*v, 6);
+  const sClack = () => { noiseHit(2400,.05,.9,4); tone(3100,.07,.08,'triangle'); setTimeout(()=>noiseHit(2800,.03,.35,5),70); };
+  const sSettle = () => { noiseHit(700,.09,.6,2); tone(660,1.6,.09); tone(990,1.2,.05); };
+  const sGrab = () => noiseHit(1200,.04,.3,2);
+  const sBowl = () => { noiseHit(500,.12,.7,1.5); tone(220,.3,.06,'triangle'); };
+
+  function syncSound(){ $('sound').setAttribute('aria-pressed', soundOn); $('sound').textContent = soundOn ? 'Sound on' : 'Sound off'; }
+  $('sound').onclick = () => { soundOn = !soundOn; store.set('sound', soundOn); syncSound(); };
+  syncSound();
+
+  // ---------- color helpers ----------
+  const rgb = h => { const n = parseInt(h.slice(1),16); return [n>>16&255, n>>8&255, n&255]; };
+  const lum = h => { const [r,g,b] = rgb(h); return (0.299*r+0.587*g+0.114*b)/255; };
+
+  // ---------- weights ----------
+  let target = [], w = [];
+  function computeTarget(){
+    const n = bowls.length, total = stones.length;
+    let t = bowls.map(b => (stones.filter(s=>s===b.id).length + 1) / (total + n));
+    const floor = 0.06/n*2; t = t.map(x => Math.max(x, floor));
+    const sum = t.reduce((a,b)=>a+b,0); target = t.map(x=>x/sum);
+    if(w.length !== n){ // keep existing shares while a bowl is added or removed
+      const nw = bowls.map((b,i) => (prevIds.indexOf(b.id) > -1 && w[prevIds.indexOf(b.id)] != null ? w[prevIds.indexOf(b.id)] : 0.0001));
+      const s = nw.reduce((a,b)=>a+b,0)||1; w = nw.map(x=>x/s);
+    }
+    prevIds = bowls.map(b=>b.id);
+  }
+  let prevIds = [];
+
+  // ---------- canvas ----------
+  const cv = $('disc'), ctx = cv.getContext('2d');
+  let S = 0, dpr = 1;
+  function size(){
+    const r = cv.getBoundingClientRect(); dpr = Math.min(window.devicePixelRatio||1, 2.5);
+    S = r.width; cv.width = Math.round(S*dpr); cv.height = Math.round(S*dpr); swirlKey = '';
+  }
+  const grain = document.createElement('canvas'); grain.width = grain.height = 256;
+  (function(){
+    const g = grain.getContext('2d'), im = g.createImageData(256,256);
+    for(let i=0;i<im.data.length;i+=4){ const v = 110 + Math.random()*90 + (Math.random()<.015?-80:0); im.data[i]=im.data[i+1]=im.data[i+2]=v; im.data[i+3]=255; }
+    g.putImageData(im,0,0);
+  })();
+  let grainPat = null;
+
+  let theta = 0.35, omega = 0;
+
+  // two colors: the classic taiji, with the halves resized
+  function yinPath(R, pp){
+    const b = R*pp, a = R*(1-pp);
+    ctx.beginPath(); ctx.moveTo(0,-R);
+    ctx.arc(0,0,R,-Math.PI/2,Math.PI/2,true);
+    ctx.arc(0,R-b,b,Math.PI/2,-Math.PI/2,true);
+    ctx.arc(0,-R+a,a,Math.PI/2,-Math.PI/2,false);
+    ctx.closePath(); return {a,b};
+  }
+
+  // three or more: a tomoe pinwheel, each arm sized by its weight
+  const TWIST = 2.7, TAU = Math.PI*2;
+  function bounds(ws){ const c=[0]; ws.forEach(x=>c.push(c[c.length-1]+x*TAU)); return c; }
+  function dots(ws){
+    const c = bounds(ws), out = [];
+    ws.forEach((x,i)=>{
+      const mid = (c[i]+c[i+1])/2, rr = 0.6;
+      const ang = mid + TWIST*rr - Math.PI/2;
+      out.push({x: rr*Math.cos(ang), y: rr*Math.sin(ang), r: Math.min(0.13, 0.32*Math.sqrt(x)*0.5+0.02), color: (i+1)%ws.length});
+    });
+    return out;
+  }
+  function regionAt(x, y, ws){ // unit-disc local coords
+    const ds = dots(ws);
+    for(const d of ds){ if((x-d.x)**2+(y-d.y)**2 < d.r*d.r) return d.color; }
+    const r = Math.hypot(x,y);
+    let u = Math.atan2(y,x) + Math.PI/2 - TWIST*r;
+    u = ((u % TAU) + TAU) % TAU;
+    const c = bounds(ws);
+    for(let i=0;i<ws.length;i++) if(u < c[i+1]) return i;
+    return ws.length-1;
+  }
+  const off = document.createElement('canvas'), octx = off.getContext('2d');
+  let swirlKey = '';
+  function renderSwirl(px){
+    const key = px + '|' + w.map(x=>x.toFixed(3)).join(',') + '|' + bowls.map(b=>b.color).join(',') + '|' + imgVer + bowls.map(b=>b.img?1:0).join('');
+    if(key === swirlKey) return; swirlKey = key;
+    off.width = off.height = px;
+    const im = octx.createImageData(px,px), d = im.data, h = px/2, cols = bowls.map(b=>rgb(b.color)), srcs = bowls.map(b=>srcData(b,px));
+    const colAt = (k,o) => srcs[k] ? [srcs[k][o], srcs[k][o+1], srcs[k][o+2]] : cols[k];
+    const c = bounds(w), ds = dots(w), n = w.length, aa = 1.2/h;
+    for(let j=0;j<px;j++) for(let i=0;i<px;i++){
+      const x = (i+.5-h)/h, y = (j+.5-h)/h, r = Math.hypot(x,y);
+      if(r > 1+aa) continue;
+      const o = (j*px+i)*4; let idx = -1, col;
+      for(const dt of ds){ const e = Math.hypot(x-dt.x,y-dt.y) - dt.r; if(e < 0){ idx = dt.color; break; } }
+      if(idx < 0){
+        let u = Math.atan2(y,x) + Math.PI/2 - TWIST*r; u = ((u % TAU) + TAU) % TAU;
+        let k = 0; while(k < n-1 && u >= c[k+1]) k++;
+        idx = k;
+        // soften the seam to the next arm
+        const dist = Math.min(u - c[k], c[k+1] - u) * Math.max(r, .02);
+        if(dist < aa){
+          const other = (u - c[k] < c[k+1] - u) ? (k-1+n)%n : (k+1)%n;
+          const t = .5 + .5*dist/aa, A = colAt(k,o), B = colAt(other,o);
+          col = [A[0]*t+B[0]*(1-t), A[1]*t+B[1]*(1-t), A[2]*t+B[2]*(1-t)];
+        }
+      }
+      col = col || colAt(idx,o);
+      d[o]=col[0]; d[o+1]=col[1]; d[o+2]=col[2];
+      d[o+3] = r > 1 ? Math.max(0, 255*(1-(r-1)/aa)) : 255;
+    }
+    octx.putImageData(im,0,0);
+  }
+
+  function fillShape(b, R, buildPath){
+    const im = imgFor(b);
+    ctx.save(); buildPath();
+    if(im){ ctx.clip(); ctx.drawImage(im, -R, -R, 2*R, 2*R); }
+    else { ctx.fillStyle = b.color; ctx.fill(); }
+    ctx.restore();
+  }
+
+  function draw(){
+    const W = cv.width; if(!W) return;
+    ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,W,W);
+    ctx.setTransform(dpr,0,0,dpr,S/2*dpr,S/2*dpr);
+    const R = S*0.39, RO = R*1.1;
+
+    ctx.save();
+    ctx.fillStyle = 'rgba(40,42,32,.35)'; ctx.filter = 'blur('+(S*0.025)+'px)';
+    ctx.beginPath(); ctx.ellipse(S*0.012, S*0.035, RO, RO*0.98, 0, 0, TAU); ctx.fill();
+    ctx.restore();
+
+    let ringG;
+    if(ctx.createConicGradient){
+      ringG = ctx.createConicGradient(-Math.PI/4,0,0);
+      [['#7d5a1d',0],['#e9cb80',.12],['#a77c2e',.28],['#f2d996',.45],['#7a561a',.6],['#d9b464',.78],['#7d5a1d',1]].forEach(s=>ringG.addColorStop(s[1],s[0]));
+    } else { ringG = ctx.createLinearGradient(-RO,-RO,RO,RO); ringG.addColorStop(0,'#e9cb80'); ringG.addColorStop(1,'#7a561a'); }
+    ctx.fillStyle = ringG; ctx.beginPath(); ctx.arc(0,0,RO,0,TAU); ctx.fill();
+    ctx.lineWidth = 1.2; ctx.strokeStyle = 'rgba(255,240,200,.6)'; ctx.beginPath(); ctx.arc(0,0,RO-0.8,Math.PI*1.05,Math.PI*1.7); ctx.stroke();
+    for(let i=0;i<8;i++){
+      ctx.save(); ctx.rotate(i*Math.PI/4 - Math.PI/2);
+      ctx.fillStyle = 'rgba(70,48,12,.75)';
+      const lines = ['111','011','101','001','110','010','100','000'][i];
+      for(let k=0;k<3;k++){
+        const x = R + (RO-R)*0.32 + k*(RO-R)*0.17, wd = (RO-R)*0.09, h = S*0.028;
+        if(lines[k]==='1') ctx.fillRect(x, -h/2, wd, h);
+        else { ctx.fillRect(x, -h/2, wd, h*0.4); ctx.fillRect(x, h*0.1, wd, h*0.4); }
+      }
+      ctx.restore();
+    }
+    ctx.fillStyle = 'rgba(30,20,5,.55)'; ctx.beginPath(); ctx.arc(0,0,R+2,0,TAU); ctx.fill();
+
+    // ---- the stone ----
+    ctx.save();
+    ctx.rotate(theta);
+    if(bowls.length === 2){
+      const A = bowls[0], B = bowls[1], p = w[0], a = R*(1-p), b = R*p;
+      fillShape(B, R, () => { ctx.beginPath(); ctx.arc(0,0,R,0,TAU); });
+      fillShape(A, R, () => yinPath(R,p));
+      fillShape(A, R, () => { ctx.beginPath(); ctx.arc(0,-R+a,a*0.27,0,TAU); });
+      fillShape(B, R, () => { ctx.beginPath(); ctx.arc(0,R-b,b*0.27,0,TAU); });
+    } else {
+      const px = Math.min(520, Math.round(2*R*dpr));
+      renderSwirl(px);
+      ctx.drawImage(off, -R, -R, 2*R, 2*R);
+    }
+    ctx.save();
+    ctx.beginPath(); ctx.arc(0,0,R,0,TAU); ctx.clip();
+    if(!grainPat) grainPat = ctx.createPattern(grain,'repeat');
+    ctx.globalCompositeOperation = 'overlay'; ctx.globalAlpha = .5;
+    ctx.fillStyle = grainPat; ctx.save(); ctx.scale(.6,.6); ctx.fillRect(-R*2,-R*2,R*4,R*4); ctx.restore();
+    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+    if(bowls.length === 2){ ctx.strokeStyle = 'rgba(120,100,70,.35)'; ctx.lineWidth = .8; yinPath(R,w[0]); ctx.stroke(); }
+    ctx.restore();
+    ctx.restore();
+
+    ctx.save();
+    ctx.beginPath(); ctx.arc(0,0,R,0,TAU); ctx.clip();
+    let g = ctx.createRadialGradient(-R*.38,-R*.45,R*.02,-R*.3,-R*.35,R*.95);
+    g.addColorStop(0,'rgba(255,255,250,.55)'); g.addColorStop(.25,'rgba(255,255,250,.12)'); g.addColorStop(1,'rgba(255,255,250,0)');
+    ctx.fillStyle = g; ctx.fillRect(-R,-R,2*R,2*R);
+    g = ctx.createRadialGradient(0,0,R*.7,0,0,R);
+    g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(1,'rgba(0,0,0,.35)');
+    ctx.fillStyle = g; ctx.fillRect(-R,-R,2*R,2*R);
+    ctx.fillStyle = 'rgba(255,255,255,.35)';
+    ctx.beginPath(); ctx.ellipse(-R*.42,-R*.55,R*.16,R*.07,-.6,0,TAU); ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    ctx.translate(0,-RO+(RO-R)*0.15);
+    ctx.fillStyle = '#3b2909';
+    ctx.beginPath(); ctx.moveTo(-S*0.03,-S*0.035); ctx.lineTo(S*0.03,-S*0.035); ctx.lineTo(0,S*0.03); ctx.closePath();
+    ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 4; ctx.shadowOffsetY = 2; ctx.fill();
+    ctx.shadowColor = 'transparent';
+    ctx.fillStyle = '#f2d996'; ctx.beginPath(); ctx.moveTo(-S*0.017,-S*0.028); ctx.lineTo(S*0.017,-S*0.028); ctx.lineTo(0,S*0.012); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+
+  // which bowl's glaze is under the notch?
+  function underNotch(){
+    const r = 0.66, x = -r*Math.sin(theta), y = -r*Math.cos(theta);
+    if(bowls.length !== 2) return regionAt(x, y, w);
+    const p = w[0], a = 1-p, b = p;
+    const d2 = (cx,cy)=> (x-cx)**2+(y-cy)**2;
+    if(d2(0,-1+a) < (a*.27)**2) return 0;
+    if(d2(0,1-b) < (b*.27)**2) return 1;
+    const inTop = d2(0,-1+a) < a*a, inBot = d2(0,1-b) < b*b;
+    return (inBot || (x<0 && !inTop)) ? 0 : 1;
+  }
+
+  // ---------- spin physics ----------
+  let dragging = false, lastAng = 0, lastT = 0, samples = [], spinning = false, landed = false, lastTick = Math.floor(theta/(Math.PI/8));
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function angleAt(e){ const r = cv.getBoundingClientRect(); return Math.atan2(e.clientY-(r.top+r.height/2), e.clientX-(r.left+r.width/2)); }
+  cv.addEventListener('pointerdown', e => {
+    dragging = true; spinning = false; omega = 0; cv.setPointerCapture(e.pointerId); cv.classList.add('grabbing');
+    lastAng = angleAt(e); lastT = performance.now(); samples = []; sGrab(); $('hint').style.opacity = 0;
+  });
+  cv.addEventListener('pointermove', e => {
+    if(!dragging) return;
+    const ang = angleAt(e), now = performance.now();
+    let d = ang - lastAng; if(d > Math.PI) d -= TAU; if(d < -Math.PI) d += TAU;
+    theta += d; samples.push({d, t: now-lastT}); if(samples.length>6) samples.shift();
+    lastAng = ang; lastT = now;
+  });
+  function release(){
+    if(!dragging) return; dragging = false; cv.classList.remove('grabbing');
+    let D=0,T=0; samples.forEach(s=>{D+=s.d;T+=s.t});
+    omega = T>0 ? D/T : 0;
+    if(performance.now()-lastT > 120) omega = 0;
+    omega = Math.max(-0.06, Math.min(0.06, omega));
+    if(Math.abs(omega) > 0.004) startSpin(); else omega = 0;
+  }
+  cv.addEventListener('pointerup', release); cv.addEventListener('pointercancel', release);
+  cv.addEventListener('keydown', e => { if(e.key===' '||e.key==='Enter'){ e.preventDefault(); flick(); } });
+  $('flick').onclick = flick;
+  function flick(){
+    audio();
+    omega = (Math.random()<.5?-1:1)*(0.025 + Math.random()*0.025);
+    if(reduce) omega *= 0.6;
+    $('hint').style.opacity = 0; startSpin();
+  }
+  function setWord(t){ const el = $('word'); el.textContent = t; el.classList.toggle('long', t.length > 22); }
+  function startSpin(){ spinning = true; landed = false; $('eyebrow').textContent = 'Spinning'; setWord('· · ·'); $('sub').textContent = 'Let it settle'; }
+  function settle(){
+    spinning = false; omega = 0; landed = true;
+    const i = underNotch(), b = bowls[i];
+    $('eyebrow').textContent = bowls.length===2 ? (i===0 ? 'Yin landed' : 'Yang landed') : 'The stone chose';
+    setWord(b.name.trim() || 'Unnamed');
+    $('sub').textContent = 'It held ' + Math.round(w[i]*100) + '% of the stone';
+    const pl = $('plate'); pl.classList.remove('flash'); void pl.offsetWidth; pl.classList.add('flash');
+    sSettle();
+  }
+  function question(){
+    if(spinning || landed) return;
+    const names = bowls.map(b => b.name.trim() || 'Unnamed');
+    setWord(names.length===2 ? names.join(' or ')+'?' : names.slice(0,-1).join(', ') + ' or ' + names[names.length-1] + '?');
+  }
+
+  let prev = performance.now();
+  function frame(now){
+    const dt = Math.min(48, now - prev); prev = now;
+    if(spinning && !dragging){
+      theta += omega*dt; omega *= Math.exp(-dt/1500);
+      if(Math.abs(omega) < 0.0006) settle();
+    }
+    const st = Math.floor(theta/(Math.PI/8));
+    if(st !== lastTick){ lastTick = st; const v = Math.min(1, Math.abs(omega)*40 + (dragging?.35:0)); if(v>.05) sTick(v); }
+    const k = 1 - Math.exp(-dt/160);
+    w = w.map((x,i) => x + (target[i]-x)*k);
+    draw();
+    requestAnimationFrame(frame);
+  }
+
+  // ---------- bowls & stones ----------
+  const SPOTS = [[37,37],[12,40],[60,30],[30,10],[40,62],[64,58],[16,66],[52,8]];
+  function renderBowls(){
+    const box = $('bowls'); box.innerHTML = '';
+    bowls.forEach((b, i) => {
+      const n = stones.filter(s=>s===b.id).length;
+      const side = document.createElement('div'); side.className = 'side'; side.style.setProperty('--c', b.color);
+      const bowl = document.createElement('button'); bowl.className = 'bowl';
+      bowl.setAttribute('aria-label', 'Add a ' + (b.name||'unnamed') + ' stone to the tray');
+      const pile = document.createElement('span'); pile.className = 'pile';
+      SPOTS.forEach(([x,y]) => { const s = document.createElement('i'); s.style.left = x+'%'; s.style.top = y+'%'; if(b.img) s.classList.add('skin-'+b.id); pile.appendChild(s); });
+      bowl.appendChild(pile);
+      bowl.onclick = () => add(b.id);
+      side.appendChild(bowl);
+      const fi = document.createElement('input'); fi.type = 'file'; fi.accept = 'image/*'; fi.hidden = true; fi.id = 'img'+b.id;
+      const ph = document.createElement('button'); ph.className = 'photo'; ph.innerHTML = PHOTO_ICON;
+      ph.setAttribute('aria-label', (b.img ? 'Replace the photo for ' : 'Use a photo for ') + (b.name||'unnamed'));
+      ph.onclick = () => fi.click();
+      fi.onchange = () => { const f = fi.files && fi.files[0]; if(f) loadPhoto(b, f); fi.value = ''; };
+      side.appendChild(ph); side.appendChild(fi);
+      if(bowls.length > 2){
+        const rm = document.createElement('button'); rm.className = 'remove'; rm.textContent = '×';
+        rm.setAttribute('aria-label', 'Put away the ' + (b.name||'unnamed') + ' bowl');
+        rm.onclick = () => { bowls.splice(i,1); stones = stones.filter(s=>s!==b.id); delete imgEls[b.id]; buildSkins(); sBowl(); landed=false; update(); };
+        side.appendChild(rm);
+      }
+      const tag = document.createElement('div'); tag.className = 'tag';
+      const row = document.createElement('div'); row.className = 'tagrow';
+      const sw = document.createElement('label'); sw.className = 'swatch' + (b.img ? ' skin-'+b.id : ''); sw.title = b.img ? 'Pick a color instead of the photo' : 'Change glaze';
+      const ci = document.createElement('input'); ci.type = 'color'; ci.value = b.color; ci.id = 'col'+b.id;
+      ci.setAttribute('aria-label', 'Glaze color for ' + (b.name||'unnamed'));
+      ci.oninput = () => {
+        b.color = ci.value;
+        if(b.img){ // a picked color replaces the photo
+          const cls = 'skin-'+b.id; b.img = null; ensureImg(b); imgVer++; buildSkins();
+          side.querySelectorAll('.'+cls).forEach(el => el.classList.remove(cls));
+          sw.title = 'Change glaze'; ph.setAttribute('aria-label', 'Use a photo for ' + (b.name||'unnamed'));
+        }
+        side.style.setProperty('--c', b.color); save(); renderTray(); renderBalance();
+      };
+      sw.appendChild(ci);
+      const ni = document.createElement('input'); ni.type = 'text'; ni.value = b.name; ni.maxLength = 18; ni.id = 'name'+b.id;
+      ni.setAttribute('aria-label', 'Name for this color');
+      ni.oninput = () => { b.name = ni.value; save(); renderBalance(); question(); bowl.setAttribute('aria-label','Add a '+(b.name||'unnamed')+' stone to the tray'); };
+      row.appendChild(sw); row.appendChild(ni);
+      const cnt = document.createElement('span'); cnt.className = 'count'; cnt.id = 'cnt'+b.id;
+      cnt.textContent = (bowls.length===2 ? (i===0?'Yin · ':'Yang · ') : '') + n + (n===1?' stone':' stones');
+      tag.appendChild(row); tag.appendChild(cnt); side.appendChild(tag);
+      box.appendChild(side);
+    });
+    if(bowls.length < MAXB){
+      const side = document.createElement('div'); side.className = 'side';
+      const nb = document.createElement('button'); nb.className = 'bowl new';
+      nb.innerHTML = '<div><span>+</span>Add a color</div>';
+      nb.onclick = () => {
+        const used = bowls.map(b=>b.color.toLowerCase());
+        const pick = PRESETS.find(p => used.indexOf(p[1]) < 0) || PRESETS[0];
+        bowls.push({id: uid++, name: pick[0], color: pick[1]}); sBowl(); landed = false; update();
+      };
+      side.appendChild(nb); box.appendChild(side);
+    }
+  }
+  function renderTray(fresh){
+    const tray = $('tray'); tray.innerHTML = '';
+    if(!stones.length){
+      const e = document.createElement('div'); e.className='empty';
+      e.textContent = 'Empty tray. Every color has an equal share. Tap a bowl to add weight.';
+      tray.appendChild(e);
+    }
+    stones.forEach((s,i) => {
+      const b = bowls.find(x=>x.id===s); if(!b) return;
+      const bt = document.createElement('button'); bt.className = 'stone' + (b.img ? ' skin-'+b.id : ''); bt.style.setProperty('--c', b.color);
+      bt.setAttribute('aria-label', 'Take back a ' + (b.name||'unnamed') + ' stone');
+      if(fresh !== i) bt.style.animation = 'none';
+      bt.onclick = () => { stones.splice(i,1); noiseHit(1900,.04,.6,3); update(); };
+      tray.appendChild(bt);
+    });
+  }
+  function renderBalance(){
+    const bar = $('bar'), lg = $('legend'); bar.innerHTML = ''; lg.innerHTML = '';
+    bowls.forEach((b,i) => {
+      const pc = Math.round(target[i]*100);
+      const s = document.createElement('span'); if(b.img) s.className = 'skin-'+b.id; else s.style.background = b.color; s.style.flex = '0 0 ' + (target[i]*100) + '%'; bar.appendChild(s);
+      const item = document.createElement('span');
+      const dot = document.createElement('i'); if(b.img) dot.className = 'skin-'+b.id; else dot.style.background = b.color;
+      const nm = document.createElement('b'); nm.textContent = (b.name.trim()||'Unnamed');
+      item.appendChild(dot); item.appendChild(nm); item.appendChild(document.createTextNode(' ' + pc + '%'));
+      lg.appendChild(item);
+    });
+  }
+  function update(fresh){ save(); computeTarget(); renderBowls(); renderTray(fresh); renderBalance(); question(); }
+  function add(id){
+    if(stones.length >= MAXS){ $('sub').textContent = 'The tray is full. Take a stone back first.'; return; }
+    stones.push(id); sClack(); update(stones.length-1);
+  }
+
+  // ---------- shaker cup ----------
+  const cup = $('cup');
+  let shaking = false, shakeStart = 0, rattleTimer = null, pouring = false;
+  function rattle(){
+    if(!shaking) return;
+    const held = (performance.now() - shakeStart)/1000;
+    const amp = Math.min(14, 5 + held*5);
+    cup.style.setProperty('--amp', amp.toFixed(1));
+    // a few stones knocking the walls
+    const hits = 1 + Math.floor(Math.random()*Math.min(3, 1+held));
+    for(let i=0;i<hits;i++) setTimeout(() => noiseHit(2000 + Math.random()*1600, .03, .25 + Math.random()*.3, 5), Math.random()*60);
+    if(Math.random()<.3) noiseHit(600, .05, .25, 2);
+    rattleTimer = setTimeout(rattle, 60 + Math.random()*60);
+  }
+  function startShake(){
+    if(shaking || pouring) return;
+    audio(); shaking = true; shakeStart = performance.now();
+    cup.classList.add('shaking'); $('cuplabel').textContent = 'Shaking…';
+    rattle();
+  }
+  function pour(){
+    if(!shaking) return;
+    shaking = false; clearTimeout(rattleTimer); cup.classList.remove('shaking'); cup.style.removeProperty('--amp');
+    const held = (performance.now() - shakeStart)/1000;
+    const n = Math.max(5, Math.min(MAXS, Math.round(5 + held*5 + Math.random()*4)));
+    // uneven luck: each bowl gets a random pull, then the stones fall where they fall
+    const pulls = bowls.map(() => Math.pow(-Math.log(1 - Math.random()), 1.4));
+    const sum = pulls.reduce((a,b)=>a+b,0);
+    const handful = [];
+    for(let i=0;i<n;i++){
+      let r = Math.random()*sum, k = 0;
+      while(k < bowls.length-1 && r >= pulls[k]){ r -= pulls[k]; k++; }
+      handful.push(bowls[k].id);
+    }
+    pouring = true; cup.disabled = true; $('cuplabel').textContent = 'Pouring';
+    stones = []; landed = false; update();
+    noiseHit(900, .15, .5, 1.2);
+    const gap = reduce ? 0 : 75;
+    handful.forEach((id, i) => setTimeout(() => {
+      stones.push(id); if(i%2===0 || gap===0) sClack(); update(stones.length-1);
+      if(i === handful.length-1){
+        pouring = false; cup.disabled = false; $('cuplabel').textContent = 'Hold to shake';
+        $('eyebrow').textContent = 'A fresh handful';
+        $('sub').textContent = 'Poured ' + handful.length + ' stones. Spin when ready.';
+      }
+    }, 120 + i*gap));
+  }
+  cup.addEventListener('pointerdown', e => { e.preventDefault(); try{ cup.setPointerCapture(e.pointerId); }catch(_){} startShake(); });
+  cup.addEventListener('pointerup', pour);
+  cup.addEventListener('pointercancel', pour);
+  cup.addEventListener('lostpointercapture', pour);
+  cup.addEventListener('keydown', e => { if((e.key===' '||e.key==='Enter') && !e.repeat){ e.preventDefault(); startShake(); } });
+  cup.addEventListener('keyup', e => { if(e.key===' '||e.key==='Enter'){ e.preventDefault(); pour(); } });
+  cup.addEventListener('click', e => e.preventDefault());
+
+  // ---------- presets ----------
+  let presets = store.get('presets', []);
+  if(!Array.isArray(presets)) presets = [];
+  function snapshot(name){
+    return {name, bowls: bowls.map(b => ({name:b.name, color:b.color, img:b.img||null})),
+      counts: bowls.map(b => stones.filter(s=>s===b.id).length)};
+  }
+  function shares(p){
+    const n = p.bowls.length, tot = p.counts.reduce((a,b)=>a+b,0), floor = 0.12/n;
+    const t = p.counts.map(c => Math.max((c+1)/(tot+n), floor)), sum = t.reduce((a,b)=>a+b,0);
+    return t.map(x => x/sum);
+  }
+  function renderPresets(){
+    const box = $('plist'); box.innerHTML = '';
+    if(!presets.length){
+      const e = document.createElement('div'); e.className = 'pempty';
+      e.textContent = 'No presets yet. Set up the bowls and the tray, give it a name, and save it.';
+      box.appendChild(e); return;
+    }
+    presets.forEach((p, i) => {
+      const card = document.createElement('div'); card.className = 'preset';
+      const ld = document.createElement('button'); ld.className = 'pload'; ld.type = 'button';
+      ld.setAttribute('aria-label', 'Load preset ' + p.name);
+      const nm = document.createElement('span'); nm.className = 'pname'; nm.textContent = p.name;
+      const bar = document.createElement('span'); bar.className = 'pbar';
+      const sh = shares(p);
+      p.bowls.forEach((b,k) => {
+        const s = document.createElement('span'); s.style.flex = '0 0 ' + (sh[k]*100) + '%';
+        s.style.background = b.img ? 'url("' + b.img + '") center/cover' : b.color; bar.appendChild(s);
+      });
+      const meta = document.createElement('span'); meta.className = 'pmeta';
+      meta.textContent = p.bowls.map((b,k) => (b.name.trim()||'Unnamed') + ' ' + Math.round(sh[k]*100) + '%').join(' · ');
+      ld.append(nm, bar, meta);
+      ld.onclick = () => loadPreset(p);
+      const del = document.createElement('button'); del.className = 'pdel'; del.type = 'button'; del.textContent = '×';
+      del.setAttribute('aria-label', 'Delete preset ' + p.name);
+      del.onclick = () => { presets.splice(i,1); store.set('presets', presets); noiseHit(1900,.04,.6,3); renderPresets(); };
+      card.append(ld, del); box.appendChild(card);
+    });
+  }
+  function loadPreset(p){
+    if(shaking || pouring) return;
+    bowls = p.bowls.map(b => ({id: uid++, name: b.name, color: b.color, img: b.img || null}));
+    stones = [];
+    p.counts.forEach((c,k) => { for(let j=0;j<c;j++) stones.push(bowls[k].id); });
+    Object.keys(imgEls).forEach(k => delete imgEls[k]); Object.keys(srcCache).forEach(k => delete srcCache[k]);
+    bowls.forEach(ensureImg); imgVer++; buildSkins();
+    spinning = false; omega = 0; landed = false; w = [];
+    sBowl(); update();
+    $('eyebrow').textContent = 'Preset loaded';
+    $('sub').textContent = p.name + ' · ' + stones.length + (stones.length===1 ? ' stone' : ' stones');
+  }
+  $('psave').addEventListener('submit', e => {
+    e.preventDefault();
+    const inp = $('pname');
+    const name = (inp.value.trim() || bowls.map(b => b.name.trim()||'Unnamed').join(' / ')).slice(0,40);
+    const snap = snapshot(name);
+    const at = presets.findIndex(p => p.name.toLowerCase() === name.toLowerCase());
+    const next = presets.slice(); if(at > -1) next[at] = snap; else next.unshift(snap);
+    if(!store.set('presets', next)){ $('sub').textContent = "Couldn't save that preset. Its photos may be too big to store."; return; }
+    presets = next; inp.value = ''; inp.blur(); sBowl(); renderPresets();
+    $('eyebrow').textContent = at > -1 ? 'Preset updated' : 'Preset saved';
+    $('sub').textContent = name;
+  });
+
+  // ---------- boot ----------
+  prevIds = bowls.map(b=>b.id);
+  bowls.forEach(ensureImg); buildSkins();
+  computeTarget(); w = target.slice();
+  renderBowls(); renderTray(); renderBalance(); question(); renderPresets();
+  size(); draw();
+  new ResizeObserver(() => { size(); draw(); }).observe(cv);
+  requestAnimationFrame(frame);
+})();
+if("serviceWorker" in navigator&&(location.protocol==="https:"||location.hostname==="localhost"))navigator.serviceWorker.register("sw.js").catch(function(){});
+</script>
+
+</body></html>
